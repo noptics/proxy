@@ -1,11 +1,11 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 	"io"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/julienschmidt/httprouter"
 )
@@ -58,12 +58,15 @@ func setHeaders(w http.ResponseWriter, rh http.Header) {
 }
 
 func main() {
-	var addr = flag.String("addr", "127.0.0.1:8080", "The addr of the application.")
-	flag.Parse()
+	host := os.Getenv("HOST")
+	port := os.Getenv("PORT")
+	if len(port) == 0 {
+		port = "8282"
+	}
 
 	handler := &proxy{}
 
-	log.Println("Starting proxy server on", *addr)
+	log.Println("Starting proxy server on", fmt.Sprintf("%s:%s", host, port))
 	r := httprouter.New()
 	r.HandleOPTIONS = true
 	r.GlobalOPTIONS = http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -78,7 +81,7 @@ func main() {
 	})
 
 	r.GET("/proxy", handler.wrapRoute)
-	if err := http.ListenAndServe(*addr, r); err != nil {
+	if err := http.ListenAndServe(fmt.Sprintf("%s:%s", host, port), r); err != nil {
 		log.Fatal("ListenAndServe:", err)
 	}
 }
